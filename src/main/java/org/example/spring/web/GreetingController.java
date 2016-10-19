@@ -3,6 +3,8 @@ package org.example.spring.web;
 
 import org.example.spring.model.Greeting;
 import org.example.spring.service.GreetingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -11,10 +13,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
+
 @RestController
 public class GreetingController {
     @Autowired
     private GreetingService greetingService;
+    private static final Logger log = LoggerFactory.getLogger(GreetingController.class);
 
     @RequestMapping(
             value = "/api/greetings",
@@ -22,8 +26,10 @@ public class GreetingController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<Greeting>> getGreetings() {
 
+        log.info("getGreeting: start");
         Collection<Greeting> greetings = greetingService.findAll();
 
+        log.info("getGreeting: end");
         return new ResponseEntity<Collection<Greeting>>(greetings,
                 HttpStatus.OK);
     }
@@ -34,10 +40,12 @@ public class GreetingController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Greeting> getGreeting(@PathVariable("id") Long id) {
 
+        log.info("getGreeting: start");
         Greeting greeting = greetingService.findOne(id);
         if (greeting == null) {
             return new ResponseEntity<Greeting>(HttpStatus.NOT_FOUND);
         }
+        log.info("getGreeting: end");
 
         return new ResponseEntity<Greeting>(greeting, HttpStatus.OK);
     }

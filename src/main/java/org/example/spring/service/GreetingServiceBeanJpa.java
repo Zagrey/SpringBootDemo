@@ -3,6 +3,9 @@ package org.example.spring.service;
 import org.example.spring.model.Greeting;
 import org.example.spring.repository.GreetingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,9 @@ public class GreetingServiceBeanJpa implements GreetingService {
     @Autowired
     private GreetingRepository greetingRepository;
 
+    @Cacheable(
+            value = "greetings", key = "100"
+            )
     @Override
     public Collection<Greeting> findAll() {
 
@@ -23,6 +29,9 @@ public class GreetingServiceBeanJpa implements GreetingService {
         return greetings;
     }
 
+    @Cacheable(
+            value = "greetings",
+            key = "#id")
     @Override
     public Greeting findOne(Long id) {
 
@@ -33,6 +42,12 @@ public class GreetingServiceBeanJpa implements GreetingService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, readOnly = false)
+    @CachePut(
+            value = "greetings",
+            key = "#result.id")
+    @CacheEvict(
+            value = "greetings",
+            key = "100")
     public Greeting create(Greeting greeting) {
 
         // Ensure the entity object to be created does NOT exist in the
@@ -44,7 +59,7 @@ public class GreetingServiceBeanJpa implements GreetingService {
         }
 
         Greeting savedGreeting = greetingRepository.save(greeting);
-        if (savedGreeting.getId() == 7){
+        if (savedGreeting.getId() == 7) {
             throw new RuntimeException();
         }
 
@@ -53,6 +68,9 @@ public class GreetingServiceBeanJpa implements GreetingService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, readOnly = false)
+    @CachePut(
+            value = "greetings",
+            key = "#greeting.id")
     public Greeting update(Greeting greeting) {
 
         // Ensure the entity object to be updated exists in the repository to
@@ -72,6 +90,9 @@ public class GreetingServiceBeanJpa implements GreetingService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, readOnly = false)
+    @CacheEvict(
+            value = "greetings",
+            key = "#id")
     public void delete(Long id) {
 
         greetingRepository.delete(id);
