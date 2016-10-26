@@ -1,11 +1,15 @@
 package org.example.spring.web;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.spring.model.Greeting;
 import org.example.spring.service.GreetingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,13 @@ import java.util.Collection;
 public class GreetingController {
     @Autowired
     private GreetingService greetingService;
+    @Autowired
+    RabbitTemplate rabbitTemplate;
+    @Value("${rabbit.input.queue}")
+    private String queueInputName;
+
+    ObjectMapper mapper = new ObjectMapper();
+
     private static final Logger log = LoggerFactory.getLogger(GreetingController.class);
 
     @RequestMapping(
@@ -60,6 +71,11 @@ public class GreetingController {
 
         Greeting savedGreeting = greetingService.create(greeting);
 
+        try {
+            rabbitTemplate.convertAndSend(queueInputName, mapper.writeValueAsString(savedGreeting));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException();
+        }
         return new ResponseEntity<Greeting>(savedGreeting, HttpStatus.CREATED);
     }
 
