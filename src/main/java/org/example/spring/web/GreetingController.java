@@ -7,6 +7,7 @@ import org.example.spring.model.Greeting;
 import org.example.spring.service.GreetingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,10 @@ public class GreetingController {
     @Value("${rabbit.input.queue}")
     private String queueInputName;
 
+    @Autowired
+    AmqpTemplate template;
+
+
     ObjectMapper mapper = new ObjectMapper();
 
     private static final Logger log = LoggerFactory.getLogger(GreetingController.class);
@@ -39,6 +44,9 @@ public class GreetingController {
 
         log.info("getGreeting: start");
         Collection<Greeting> greetings = greetingService.findAll();
+
+        for(int i = 0;i<10;i++)
+            template.convertAndSend("query-example-2","Message " + i);
 
         log.info("getGreeting: end");
         return new ResponseEntity<Collection<Greeting>>(greetings,
