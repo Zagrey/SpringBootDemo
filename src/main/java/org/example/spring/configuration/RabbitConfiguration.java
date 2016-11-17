@@ -8,12 +8,15 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfiguration {
     Logger logger = LoggerFactory.getLogger(RabbitConfiguration.class);
+    @Value("${rabbit.input.queue}")
+    String queueName;
 
     @Bean
     public ConnectionFactory connectionFactory() {
@@ -34,6 +37,6 @@ public class RabbitConfiguration {
 
     @Bean
     public Queue myQueue1() {
-        return new Queue("query-example-2", true);
+        return new Queue(queueName, true);
     }
 }

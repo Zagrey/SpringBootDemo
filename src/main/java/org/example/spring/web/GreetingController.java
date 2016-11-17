@@ -4,6 +4,7 @@ package org.example.spring.web;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.spring.model.Greeting;
+import org.example.spring.model.GreetingRequestObject;
 import org.example.spring.service.GreetingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class GreetingController {
     @Autowired
     RabbitTemplate rabbitTemplate;
     @Value("${rabbit.input.queue}")
-    private String queueInputName;
+    private String queueName;
 
     @Autowired
     AmqpTemplate template;
@@ -45,8 +46,8 @@ public class GreetingController {
         log.info("getGreeting: start");
         Collection<Greeting> greetings = greetingService.findAll();
 
-        for(int i = 0;i<10;i++)
-            template.convertAndSend("query-example-2","Message " + i);
+//        for(int i = 0;i<50;i++)
+//            template.convertAndSend(queueName,"Message " + i);
 
         log.info("getGreeting: end");
         return new ResponseEntity<Collection<Greeting>>(greetings,
@@ -77,14 +78,16 @@ public class GreetingController {
     public ResponseEntity<Greeting> createGreeting(
             @RequestBody Greeting greeting) {
 
-        Greeting savedGreeting = greetingService.create(greeting);
+        log.info("createGreeting: before sent");
+        GreetingRequestObject gro = new GreetingRequestObject("create", greeting);
 
         try {
-            rabbitTemplate.convertAndSend(queueInputName, mapper.writeValueAsString(savedGreeting));
+            rabbitTemplate.convertAndSend(queueName, mapper.writeValueAsString(gro));
         } catch (JsonProcessingException e) {
             throw new RuntimeException();
         }
-        return new ResponseEntity<Greeting>(savedGreeting, HttpStatus.CREATED);
+        log.info("createGreeting: after sent");
+        return new ResponseEntity<Greeting>(greeting, HttpStatus.CREATED);
     }
 
     @RequestMapping(
@@ -95,13 +98,23 @@ public class GreetingController {
     public ResponseEntity<Greeting> updateGreeting(
             @RequestBody Greeting greeting) {
 
-        Greeting updatedGreeting = greetingService.update(greeting);
-        if (updatedGreeting == null) {
-            return new ResponseEntity<Greeting>(
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+//        Greeting updatedGreeting = greetingService.update(greeting);
+//        if (updatedGreeting == null) {
+//            return new ResponseEntity<Greeting>(
+//                    HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
 
-        return new ResponseEntity<Greeting>(updatedGreeting, HttpStatus.OK);
+        log.info("updateGreeting: before sent");
+        GreetingRequestObject gro = new GreetingRequestObject("update", greeting);
+
+        try {
+            rabbitTemplate.convertAndSend(queueName, mapper.writeValueAsString(gro));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException();
+        }
+        log.info("updateGreeting: after sent");
+
+        return new ResponseEntity<Greeting>(greeting, HttpStatus.OK);
     }
 
     @RequestMapping(
@@ -112,8 +125,19 @@ public class GreetingController {
     public ResponseEntity<Greeting> deleteGreeting(@PathVariable("id") Long id,
                                                    @RequestBody Greeting greeting) {
 
-        greetingService.delete(id);
+//        greetingService.delete(id);
 
-        return new ResponseEntity<Greeting>(HttpStatus.NO_CONTENT);
+        greeting.setId(id);
+        log.info("deleteGreeting: before sent");
+        GreetingRequestObject gro = new GreetingRequestObject("delete", greeting);
+
+        try {
+            rabbitTemplate.convertAndSend(queueName, mapper.writeValueAsString(gro));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException();
+        }
+        log.info("deleteGreeting: after sent");
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -26,10 +26,7 @@ public class DemoApplication {
 
     @Bean
     public CacheManager cacheManager() {
-
         ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager("greetings");
-//        GuavaCacheManager cacheManager = new GuavaCacheManager("greetings");
-
         return cacheManager;
     }
 
